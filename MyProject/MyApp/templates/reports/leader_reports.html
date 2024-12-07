@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leader Reports</title>
+    <link rel="stylesheet" href="{% static 'css/leader_reports.css' %}">
+</head>
+<body>
+    <header>
+        <h2>TaskFlow</h2>
+    </header>
+    <div class="container">
+        <a href="{% url 'dashboard' %}" class="back-btn">Back to Dashboard</a>
+        <h1>Leader Reports</h1>
+
+        <div class="main-content">
+            <!-- Left Container: Data Overview -->
+            <div class="left-container">
+                <!-- Projects Overview -->
+                <section>
+                    <h2>Projects Overview</h2>
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td>{{ project.name }}</td>
+                                <td>{{ project.description }}</td>
+                                <td>
+                                    {% if project.progress == 100 %}
+                                        Completed
+                                    {% else %}
+                                        In Progress
+                                    {% endif %}
+                                </td>
+                                <td>{{ project.progress }}%</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">No projects under your leadership.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Tasks Overview -->
+                <section>
+                    <h2>Tasks Overview</h2>
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Task Name</th>
+                                <th>Assigned To</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td>{{ task.name }}</td>
+                                <td>{{ task.assigned_to.username }}</td>
+                                <td>{{ task.status }}</td>
+                                <td>{{ task.progress }}%</td>
+                                <td>{{ task.due_date }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">No tasks found for your projects.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+
+            <!-- Right Container: Visualization -->
+            <div class="right-container">
+                <!-- Project Members Overview -->
+                <section>
+                    <h2>Project Members Overview</h2>
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>Member Name</th>
+                                <th>Role</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td>{{ member.user.username }}</td>
+                                <td>{{ member.role }}</td>
+                                <td>{{ member.progress }}%</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3">No members assigned to your projects.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Gantt Chart Section -->
+                <section>
+                    <h2>Project Progress Gantt Chart</h2>
+                    <div class="gantt-container">
+                        <canvas id="ganttChart" class="gantt-chart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Generate Report Section -->
+                <section>
+                    <h2>Generate Reports</h2>
+                    <a href="{% url 'generate_csv_report' %}">
+                        <button class="generate-report-btn">Download Report</button>
+                    </a>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('ganttChart').getContext('2d');
+
+            const tasks = [
+                {% for task in tasks %}
+                { 
+                    name: "{{ task.name }}", 
+                    assignedTo: "{{ task.assigned_to.username }}", 
+                    progress: {{ task.progress }},
+                    status: "{{ task.status }}",
+                    dueDate: "{{ task.due_date }}"
+                },
+                {% endfor %}
+            ];
+
+            const datasets = tasks.map((task, index) => ({
+                label: `${task.name} (${task.assignedTo})`,
+                data: [{ x: 0, x2: task.progress, y: index }],
+                backgroundColor: 'rgba(69, 123, 157, 0.7)',
+            }));
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: tasks.map(t => `${t.name}`),
+                    datasets: datasets,
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { min: 0, max: 100, title: { display: true, text: 'Progress (%)' } },
+                        y: { title: { display: true, text: 'Tasks' } },
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (tooltipItem) {
+                                    const task = tasks[tooltipItem.dataIndex];
+                                    return `${task.name}: ${task.progress}% (Due: ${task.dueDate})`;
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        });
+    </script>
+</body>
+</html>

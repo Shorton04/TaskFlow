@@ -24,6 +24,10 @@ urlpatterns = [
     path('tasks/create/', views.task_create, name='task_create'),
     path('tasks/<int:pk>/update/', views.task_update, name='task_update'),
     path('tasks/<int:pk>/delete/', views.task_delete, name='task_delete'),
+    path('dashboard/leader-reports/', views.leader_reports, name='leader-reports'),
+    path('dashboard/member-reports/', views.member_reports, name='member-reports'),
+    path('member-reports/generate-summary-report/<int:project_id>/', views.generate_project_summary_report, name='generate_project_summary_report'),
+    path('generate-csv-report/', views.generate_csv_report, name='generate_csv_report'),
 ]
 
 if settings.DEBUG:

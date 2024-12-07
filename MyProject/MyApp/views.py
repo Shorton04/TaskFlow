@@ -16,6 +16,8 @@ from .models import Task
 from .forms import TaskForm
 import logging
 from django.http import HttpResponse, HttpResponseForbidden
+import csv
+from django.core.paginator import Paginator
 
 class TeamLeaderRequiredMiddleware:
     def __init__(self, get_response):
@@ -238,6 +240,123 @@ def profile_view(request):
         'delete_form': delete_form,
     }
     return render(request, 'profile.html', context)
+
+@login_required
+def dashboard(request):
+    if request.user.is_authenticated:
+        if request.user.role == 'project_leader':
+            # Redirect Project Leader to the Leader's report page
+            return redirect('leader_reports')
+        else:
+            # Redirect Team Member to the Member's report page
+            return redirect('member_reports')
+    else:
+        # Redirect unauthenticated users to the login page
+        return redirect('login')
+
+@login_required
+def leader_reports(request):
+    # Check if the user is a project leader
+    if request.user.role != 'project_leader':
+        return redirect('dashboard')  # Redirect non-leader users
+
+    projects = Project.objects.filter(members__user=request.user, members__role='project_manager')
+
+    project_paginator = Paginator(projects, 10)
+    project_page_number = request.GET.get('project_page', 1)
+    project_page_obj = project_paginator.get_page(project_page_number)
+
+    tasks = Task.objects.filter(project__in=projects)
+
+    task_paginator = Paginator(tasks, 10)
+    task_page_number = request.GET.get('task_page', 1)
+    task_page_obj = task_paginator.get_page(task_page_number)
+
+    members = ProjectMember.objects.filter(project__in=projects)
+
+    member_paginator = Paginator(members, 10)
+    member_page_number = request.GET.get('member_page', 1)
+    member_page_obj = member_paginator.get_page(member_page_number)
+
+    return render(request, 'reports/leader_reports.html', {
+        'projects': project_page_obj,
+        'tasks': task_page_obj,
+        'members': member_page_obj,
+    })
+
+def generate_csv_report(request):
+    projects = Project.objects.all()
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="leader_report.csv"'
+
+    writer = csv.writer(response)
+
+    # Write the CSV header
+    writer.writerow(['Project Name', 'Description', 'Status', 'Progress (%)'])
+
+    for project in projects:
+        # Make sure progress is a valid value
+        status = 'Completed' if project.progress == 100 else 'In Progress'
+        writer.writerow([project.name, project.description, status, project.progress])
+
+    return response
+
+@login_required
+def member_reports(request):
+    tasks = Task.objects.filter(assigned_to=request.user).select_related('project')
+
+    context = {
+        'tasks': tasks,
+    }
+    return render(request, 'reports/member_reports.html', context)
+
+@login_required
+def generate_project_summary_report(request, project_id):
+    try:
+        project = Project.objects.get(id=project_id)
+    except Project.DoesNotExist:
+        return HttpResponse('Project not found', status=404)
+
+    tasks = Task.objects.filter(project=project)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="project_summary_{project.name}.csv"'
+
+    writer = csv.writer(response)
+
+    writer.writerow(['Project Name', project.name])
+    writer.writerow(['Description', project.description])
+    writer.writerow([])
+
+    writer.writerow(
+        ['Task ID', 'Task Name', 'Status', 'Assigned To', 'Start Date', 'Due Date', 'Completion Date', 'Priority',
+         'Progress', 'Notes'])
+
+    for task in tasks:
+        writer.writerow([
+            task.id,
+            task.name,
+            task.status,
+            task.assigned_to.username if task.assigned_to else 'N/A',
+            task.due_date,
+            f"{task.progress:.2f}%",
+        ])
+
+    return response
+
+@login_required
+def project_tasks_data(request, project_id):
+    project = get_object_or_404(Project, id=project_id, members__user=request.user)
+    tasks = project.tasks.all()
+    task_list = [{
+        'name': task.name,
+        'description': task.description,
+        'status': task.status,
+        'due_date': task.due_date,
+        'progress': task.progress
+    } for task in tasks]
+    return JsonResponse(task_list, safe=False)
 
 User = get_user_model()
 
