@@ -1,0 +1,138 @@
+:root {
+    --imperial-red: #E63946;
+    --honeydew: #F1FAEE;
+    --powder-blue: #A8DADC;
+    --celadon-blue: #457B9D;
+    --prussian-blue: #1D3557;
+    --hover-blue: #DFF6F3;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--honeydew);
+    color: var(--prussian-blue);
+}
+
+header {
+    background-color: var(--prussian-blue);
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 4rem;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+header h2 {
+    color: white;
+}
+
+h1 {
+    text-align: center;
+    color: var(--imperial-red);
+}
+
+h2, h3 {
+    color: var(--prussian-blue);
+}
+
+.back-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    margin-bottom: 1rem;
+    background-color: var(--imperial-red);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.back-btn:hover {
+    background-color: var(--prussian-blue);
+}
+
+.tasks-table, .tasks-table th, .tasks-table td {
+    border: 1px solid var(--powder-blue);
+    border-collapse: collapse;
+}
+
+.tasks-table {
+    background-color: white;
+    width: 105%;
+    max-width: 1200px;
+    margin-bottom: 2rem;
+}
+
+.tasks-table th, .tasks-table td {
+    color: var(--prussian-blue);
+    padding: 1rem;
+    text-align: left;
+}
+
+.tasks-table th {
+    background-color: var(--celadon-blue);
+    color: white;
+}
+
+.tasks-table tbody tr:hover {
+    cursor: pointer;
+}
+
+/* Layout changes */
+.main-content {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.left-container {
+    flex: 2;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    color: white;
+}
+
+.right-container {
+    flex: 3;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    color: white;
+}
+
+.gantt-container {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.gantt-chart {
+    width: 100%;
+    height: 400px;
+}
+
+.generate-report-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: var(--imperial-red);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-top: 0.5rem;
+    cursor: pointer;
+}
+
+.generate-report-btn:hover {
+    background-color: var(--prussian-blue);
+}

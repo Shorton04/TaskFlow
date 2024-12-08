@@ -1,0 +1,222 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Reports</title>
+    <link rel="stylesheet" href="{% static 'css/member_reports.css' %}">
+</head>
+<body>
+    <header>
+        <h2>TaskFlow</h2>
+    </header>
+    <div class="container">
+        <a href="{% url 'dashboard' %}" class="back-btn">Back to Dashboard</a>
+        <h1>Member Reports</h1>
+
+        <section>
+            <h2>Your Tasks</h2>
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Task Name</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Due Date</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody id="taskTableBody">
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.project.name }}</td>
+                        <td>{{ task.name }}</td>
+                        <td>{{ task.description }}</td>
+                        <td>{{ task.get_status_display }}</td>
+                        <td>{{ task.due_date }}</td>
+                        <td>{{ task.progress }}%</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not tasks %}
+                    <tr id="noTasksMessage">
+                        <td colspan="6">No tasks assigned to you.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+
+            <!-- Gantt Chart Section -->
+            <div class="gantt-container">
+                <h2>Progress Tracker (Gantt Chart)</h2>
+                <div class="gantt-chart">
+                    <canvas id="ganttChart" width="1000" height="400"></canvas>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button id="generateReportButton" class="generate-report-btn" style="cursor: pointer;">
+                        Generate Report
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('ganttChart').getContext('2d');
+        const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        let ganttChart;
+
+        const tasks = [
+            {% for task in tasks %}
+            {
+                id: {{ task.id }},
+                name: "{{ task.name }}",
+                project: "{{ task.project.name }}",
+                status: "{{ task.status }}",
+                startDate: "{{ task.start_date|date:'Y-m-d' }}",
+                dueDate: "{{ task.due_date|date:'Y-m-d' }}",
+                progress: {{ task.progress }}
+            },
+            {% endfor %}
+        ];
+
+        function calculateProgressBasedOnStatus(task) {
+            switch (task.status) {
+                case "Completed":
+                    return 100;
+                case "In Progress":
+                    return task.progress;
+                case "Pending":
+                    return 0;
+                default:
+                    return 0;
+            }
+        }
+
+        function groupTasksByProject(tasks) {
+            const groupedTasks = {};
+
+            tasks.forEach(task => {
+                if (!groupedTasks[task.project]) {
+                    groupedTasks[task.project] = [];
+                }
+                groupedTasks[task.project].push(task);
+            });
+
+            return groupedTasks;
+        }
+
+        function createGanttChart(tasks) {
+            const groupedTasks = groupTasksByProject(tasks);
+
+            const datasets = [];
+            const yLabels = Object.keys(groupedTasks);
+
+            yLabels.forEach(projectName => {
+                const taskData = Array(12).fill(0);
+
+                groupedTasks[projectName].forEach(task => {
+                    const startDate = new Date(task.startDate);
+                    const endDate = new Date(task.dueDate);
+                    const startMonth = startDate.getMonth();
+                    const endMonth = endDate.getMonth();
+
+                    for (let i = startMonth; i <= endMonth; i++) {
+                        taskData[i] += calculateProgressBasedOnStatus(task) / groupedTasks[projectName].length;
+                    }
+                });
+
+                datasets.push({
+                    label: projectName,
+                    data: taskData,
+                    backgroundColor: 'rgba(69, 123, 157, 0.5)',
+                    borderColor: 'rgba(29, 53, 87, 1)',
+                    borderWidth: 1,
+                });
+            });
+
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: datasets,
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'category',
+                            labels: months,
+                            ticks: {
+                                color: '#1D3557',
+                            },
+                            grid: { drawOnChartArea: false },
+                        },
+                        y: {
+                            type: 'category',
+                            labels: yLabels,
+                            ticks: {
+                                color: '#1D3557',
+                            },
+                        },
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `${context.dataset.label}: ${context.raw}% Progress`;
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        function updateGanttChart() {
+            if (ganttChart) ganttChart.destroy();
+            ganttChart = createGanttChart(tasks); 
+        }
+    
+        updateGanttChart();
+    
+        document.getElementById('generateReportButton').addEventListener('click', function () {
+            // Generate CSV for task data
+            const table = document.querySelector('.tasks-table');
+            let csvContent = "Task,Description,Status,Due Date,Progress\n";
+
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const columns = row.querySelectorAll('td');
+                const rowData = Array.from(columns).map(col => col.innerText).join(',');
+                csvContent += rowData + "\n";
+            });
+
+            const linkCsv = document.createElement('a');
+            const blobCsv = new Blob([csvContent], { type: 'text/csv' });
+            const urlCsv = URL.createObjectURL(blobCsv);
+            linkCsv.setAttribute('href', urlCsv);
+            linkCsv.setAttribute('download', 'project_summary_report.csv');
+            linkCsv.click();
+
+            // Generate JPEG for the Gantt chart
+            const canvas = document.getElementById('ganttChart');
+            const imageUrl = canvas.toDataURL('image/jpeg');
+
+            const linkImg = document.createElement('a');
+            linkImg.setAttribute('href', imageUrl);
+            linkImg.setAttribute('download', 'gantt_chart.jpg');
+            linkImg.click();
+        });
+    });
+    </script>
+</body>
+</html>
