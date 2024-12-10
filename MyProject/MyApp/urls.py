@@ -28,6 +28,10 @@ urlpatterns = [
     path('dashboard/member-reports/', views.member_reports, name='member-reports'),
     path('member-reports/generate-summary-report/<int:project_id>/', views.generate_project_summary_report, name='generate_project_summary_report'),
     path('generate-csv-report/', views.generate_csv_report, name='generate_csv_report'),
+    
+    path('kanban-view/', views.kanban_board, name='kanban_board'),
+    path('update-task-status/<int:task_id>/', views.update_task_status, name='update_task_status'),
+
 ]
 
 if settings.DEBUG:

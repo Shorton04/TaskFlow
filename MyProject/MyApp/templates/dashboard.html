@@ -23,7 +23,8 @@
         <ul class="list-unstyled">
             <li><a class="text-white p-3 d-block" href="dashboard">Dashboard</a></li>
             <li><a class="text-white p-3 d-block" href="project">Projects</a></li>
-            <li><a class="text-white p-3 d-block" href="tasks">Tasks</a></li>
+            <!-- <li><a class="text-white p-3 d-block" href="tasks">Tasks</a></li> -->
+            <li><a class="text-white p-3 d-block" href="{% url 'kanban_board'%}">Tasks</a></li>
             <li><a class="text-white p-3 d-block" href="team-management">Team Management</a></li>
             <!-- Dynamic Reports link -->
                 {% if user.role == 'project_leader' %}

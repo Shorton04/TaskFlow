@@ -66,6 +66,38 @@ class ProjectMember(models.Model):
         """Retrieve all projects led by a specific project leader."""
         return Project.objects.filter(members__user=user, members__role='project_manager')
 
+# class Task(models.Model):
+#     STATUS_CHOICES = [
+#         ('pending', 'Pending'),
+#         ('in_progress', 'In Progress'),
+#         ('completed', 'Completed'),
+#     ]
+
+#     name = models.CharField(max_length=200)
+#     description = models.TextField(blank=True, null=True)
+#     assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+#     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
+#     status = models.CharField(
+#         max_length=20,
+#         choices=STATUS_CHOICES,
+#         default='pending'
+#     )
+#     due_date = models.DateField(null=True, blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#     progress = models.FloatField(default=0)  # Task progress in percentage (0-100)
+
+#     def __str__(self):
+#         return f"{self.name} ({self.status})"
+
+#     @staticmethod
+#     def get_user_tasks(user):
+#         """Retrieve all tasks assigned to a specific user."""
+#         return Task.objects.filter(assigned_to=user)
+
+
+
+
 class Task(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),

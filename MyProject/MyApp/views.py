@@ -15,9 +15,12 @@ from .forms import ProjectForm
 from .models import Task
 from .forms import TaskForm
 import logging
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 import csv
 from django.core.paginator import Paginator
+
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 class TeamLeaderRequiredMiddleware:
     def __init__(self, get_response):
@@ -45,10 +48,13 @@ def task_create(request):
         form = TaskForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('task_list')
+            # return redirect('task_list')
+            return redirect('kanban_board') 
     else:
         form = TaskForm()
     return render(request, 'task_form.html', {'form': form})
+
+
 
 @login_required
 def task_update(request, pk):
@@ -416,3 +422,48 @@ def register_view(request):
             messages.success(request, "Registration successful!")
             return redirect("/login/")
     return render(request, "register.html")
+
+
+def kanban_board(request):
+    # Get all projects and users
+    projects = Project.objects.all()
+    users = User.objects.all()
+
+    # If the user is a project leader, show all tasks
+    if request.user.role == 'project_leader':
+        tasks = Task.objects.all()  # Get all tasks across all projects
+    else:
+        # If the user is a member, show only tasks assigned to them
+        tasks = Task.objects.filter(assigned_to=request.user)
+
+    return render(request, 'kanban/kanban.html', {
+        'tasks': tasks,
+        'users': users,
+        'projects': projects
+    })
+
+
+
+
+
+def update_task_status(request, task_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            new_status = data.get('status')
+            
+            if new_status in dict(Task.STATUS_CHOICES):
+                task = Task.objects.get(id=task_id)
+                task.status = new_status
+                task.save()
+                return JsonResponse({'status': 'success'})
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+        except Task.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
+
+
+
