@@ -21,10 +21,10 @@
     <div class="sidebar" style="background-color: #1D3557; height: 100vh; position: fixed; width: 250px;">
         <h2 class="text-white text-center py-3">TaskFlow</h2>
         <ul class="list-unstyled">
-            <li><a class="text-white p-3 d-block" href="dashboard">Dashboard</a></li>
-            <li><a class="text-white p-3 d-block" href="project">Projects</a></li>
-            <li><a class="text-white p-3 d-block" href="tasks">Tasks</a></li>
-            <li><a class="text-white p-3 d-block" href="team-management">Team Management</a></li>
+            <li><a class="text-white p-3 d-block" href="{% url 'dashboard' %}">Dashboard</a></li>
+            <li><a class="text-white p-3 d-block" href="{% url 'project_list' %}">Projects</a></li>
+            <li><a class="text-white p-3 d-block" href="{% url 'task_list' %}">Tasks</a></li>
+            <li><a class="text-white p-3 d-block" href="">Team Management</a></li>
             <!-- Dynamic Reports link -->
                 {% if user.role == 'project_leader' %}
                     <li><a class="text-white p-3 d-block" href="{% url 'leader-reports' %}">Reports</a></li>
@@ -115,6 +115,7 @@
                         <th>Task</th>
                         <th>Project</th>
                         <th>Status</th>
+                        <th>Priority</th>
                         <th>Due Date</th>
                     </tr>
                 </thead>
@@ -130,6 +131,15 @@
                                     <span class="badge bg-success">Completed</span>
                                 {% else %}
                                     <span class="badge bg-danger">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.priority == 'urgent' %}
+                                    <span class="badge bg-danger">Urgent</span>
+                                {% elif task.priority == 'important' %}
+                                    <span class="badge bg-warning text-dark">Important</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Can Wait</span>
                                 {% endif %}
                             </td>
                             <td>{{ task.due_date|date:"M d, Y" }}</td>

@@ -40,6 +40,7 @@ class Project(models.Model):
                 "name": task.name,
                 "description": task.description,
                 "status": task.status,
+                "priority": task.priority,
                 "due_date": task.due_date,
                 "progress": task.progress,
             }
@@ -73,6 +74,12 @@ class Task(models.Model):
         ('completed', 'Completed'),
     ]
 
+    PRIORITY_CHOICES = [
+        ('urgent', 'Urgent'),
+        ('important', 'Important'),
+        ('can_wait', 'Can Wait'),
+    ]
+
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
@@ -82,10 +89,15 @@ class Task(models.Model):
         choices=STATUS_CHOICES,
         default='pending'
     )
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='can_wait',
+    )
     due_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    progress = models.FloatField(default=0)  # Task progress in percentage (0-100)
+    progress = models.FloatField(default=0)
 
     def __str__(self):
         return f"{self.name} ({self.status})"
@@ -93,4 +105,5 @@ class Task(models.Model):
     @staticmethod
     def get_user_tasks(user):
         """Retrieve all tasks assigned to a specific user."""
+     
         return Task.objects.filter(assigned_to=user)

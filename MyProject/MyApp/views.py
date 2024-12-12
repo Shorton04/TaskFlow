@@ -14,6 +14,7 @@ from .models import Project, Task, User
 from .forms import ProjectForm
 from .models import Task
 from .forms import TaskForm
+from .forms import TaskUpdateForm
 import logging
 from django.http import HttpResponse, HttpResponseForbidden
 import csv
@@ -33,7 +34,6 @@ def task_list(request):
     tasks = Task.objects.filter(assigned_to=request.user)
     print(tasks)  # Debugging: Print tasks in the console
     return render(request, 'task_list.html', {'tasks': tasks})
-
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,7 @@ def task_delete(request, pk):
 @login_required
 def project_list(request):
     projects = Project.objects.filter(created_by=request.user)
+    print(projects)
     return render(request, 'project_list.html', {'projects': projects})
 
 
@@ -396,6 +397,24 @@ def login_view(request):
         else:
             messages.error(request, "Invalid email or password")
     return render(request, "login.html")
+
+@login_required
+def task_update(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    
+    # Ensure only project leaders or the assigned user can update
+    if not (request.user.role == 'project_leader' or task.assigned_to == request.user):
+        return HttpResponseForbidden("You do not have permission to update this task.")
+    
+    if request.method == 'POST':
+        form = TaskUpdateForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            return redirect('task_list')  # Redirect back to the task list
+    else:
+        form = TaskUpdateForm(instance=task)
+
+    return render(request, 'task_update.html', {'form': form, 'task': task})
 
 def register_view(request):
     if request.method == "POST":
